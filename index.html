@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Antrenman">
+<meta name="theme-color" content="#111111">
+<title>Antrenman Planı</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root { --bg:#f2efe9; --card:#fff; --dark:#111; --accent:#ff4500; --muted:#999; --border:#e0ddd6; --green:#16a34a; }
+html { height: 100%; }
+body { height:100%; background:var(--bg); font-family:-apple-system,'Helvetica Neue',Arial,sans-serif; display:flex; flex-direction:column; overflow:hidden; max-width:500px; margin:0 auto; }
+
+/* TOPBAR */
+#topbar { background:var(--dark); color:#fff; padding:14px 16px 0; flex-shrink:0; }
+.tb-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.app-title { font-size:17px; font-weight:900; letter-spacing:1px; }
+.app-title b { color:var(--accent); }
+.week-ctrl { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.12); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; }
+.wbtn { background:none; border:none; color:#fff; font-size:20px; line-height:1; cursor:pointer; padding:0; opacity:.7; }
+#dayTabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:12px; -webkit-overflow-scrolling:touch; }
+#dayTabs::-webkit-scrollbar { display:none; }
+.dtab { flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; background:rgba(255,255,255,.12); color:rgba(255,255,255,.5); font-family:inherit; }
+.dtab.active { background:var(--accent); color:#fff; }
+.dtab.rd { opacity:.4; }
+
+/* SCROLL */
+#mainScroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px; }
+
+/* DAY HEADER */
+.day-hdr { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.day-hdr h2 { font-size:19px; font-weight:800; color:var(--dark); margin-bottom:3px; }
+.day-hdr p { font-size:12px; color:var(--muted); }
+.day-stats { display:flex; gap:8px; }
+.dstat { background:var(--bg); border-radius:10px; padding:8px 12px; text-align:center; }
+.dstat strong { display:block; font-size:20px; font-weight:900; color:var(--accent); line-height:1; }
+.dstat span { font-size:10px; color:var(--muted); font-weight:600; }
+.sec-lbl { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin:14px 0 8px 2px; }
+
+/* EXERCISE CARD */
+.ex-card { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:8px; overflow:hidden; }
+.ex-hdr { display:flex; align-items:center; gap:12px; padding:13px 14px; cursor:pointer; -webkit-user-select:none; user-select:none; }
+.ex-num { width:34px; height:34px; background:var(--dark); color:#fff; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0; }
+.ex-info { flex:1; min-width:0; }
+.ex-name { font-size:14px; font-weight:700; color:var(--dark); margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ex-chips { display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
+.chip { font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--bg); color:#555; }
+.chip.hi { background:rgba(255,69,0,.1); color:var(--accent); }
+.cat { font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; text-transform:uppercase; letter-spacing:.4px; }
+.cg{background:#dbeafe;color:#1d4ed8}.cc{background:#fee2e2;color:#dc2626}.ck{background:#d1fae5;color:#065f46}.ce{background:#fef9c3;color:#854d0e}
+.arr { font-size:18px; color:var(--muted); flex-shrink:0; transition:transform .25s; line-height:1; }
+.arr.open { transform:rotate(90deg); }
+
+/* EDIT PANEL */
+.ep { border-top:1px solid var(--border); padding:14px; background:#f8f7f4; }
+.eg { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:10px; }
+.eg .full { grid-column:1/-1; }
+.ef { display:flex; flex-direction:column; gap:4px; }
+.ef label { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+.ef input,.ef select { border:1.5px solid var(--border); border-radius:9px; padding:10px 12px; font-size:15px; font-weight:600; font-family:inherit; color:var(--dark); background:#fff; outline:none; width:100%; -webkit-appearance:none; }
+.ef input:focus,.ef select:focus { border-color:var(--accent); }
+.ebtns { display:flex; gap:8px; }
+.bsave { flex:1; background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; }
+.bdel { background:#fee2e2; color:#dc2626; border:none; border-radius:10px; padding:12px 14px; font-size:16px; cursor:pointer; }
+
+/* REST */
+.rest-card { background:var(--card); border:2px dashed var(--border); border-radius:16px; padding:32px 18px; text-align:center; }
+.rest-card .ri { font-size:44px; margin-bottom:10px; }
+.rest-card h3 { font-size:18px; font-weight:800; color:var(--dark); margin-bottom:6px; }
+.rest-card p { font-size:13px; color:var(--muted); margin-bottom:16px; }
+.rest-items { text-align:left; background:var(--bg); border-radius:12px; padding:10px 14px; }
+.rest-items div { font-size:13px; padding:5px 0; border-bottom:1px solid var(--border); color:var(--dark); }
+.rest-items div:last-child { border-bottom:none; }
+
+/* ADD BTN */
+.add-btn { width:100%; background:#fff; border:2px dashed var(--border); border-radius:14px; padding:14px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:14px; font-weight:600; color:var(--muted); cursor:pointer; font-family:inherit; margin-top:8px; }
+
+/* GOALS VIEW */
+#goalsView { display:none; flex-direction:column; flex:1; overflow:hidden; }
+#goalsView.on { display:flex; }
+.g-hdr { background:var(--dark); color:#fff; padding:20px 16px; flex-shrink:0; text-align:center; }
+.g-hdr h2 { font-size:20px; font-weight:800; margin-bottom:2px; }
+.g-hdr p { font-size:12px; opacity:.5; margin-bottom:10px; }
+.g-pct { font-size:50px; font-weight:900; color:var(--accent); line-height:1; }
+.g-sub { font-size:12px; opacity:.55; margin-top:3px; }
+.g-bar { background:rgba(255,255,255,.15); height:6px; border-radius:999px; margin-top:12px; overflow:hidden; }
+.g-bar-f { height:100%; background:var(--accent); border-radius:999px; transition:width .5s; }
+#goalsScroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px; }
+.g-item { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:13px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; cursor:pointer; -webkit-user-select:none; }
+.g-item.done { background:#f0fdf4; border-color:#86efac; }
+.g-badge { width:32px; height:32px; border-radius:8px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; }
+.g-item.done .g-badge { background:var(--green); }
+.g-txt { flex:1; font-size:13px; font-weight:500; color:var(--dark); line-height:1.4; }
+.g-chk { width:26px; height:26px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; color:transparent; }
+.g-item.done .g-chk { background:var(--green); border-color:var(--green); color:#fff; }
+
+/* BOTTOM NAV */
+#bnav { background:var(--dark); display:flex; flex-shrink:0; padding:10px 0 16px; }
+.nb { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; color:rgba(255,255,255,.4); cursor:pointer; font-family:inherit; padding:4px 0; }
+.nb.on { color:#fff; }
+.nb .ni { font-size:22px; }
+.nb .nl { font-size:9px; font-weight:700; letter-spacing:.8px; }
+
+/* MODAL */
+#mOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:50; align-items:flex-end; justify-content:center; }
+#mOverlay.on { display:flex; }
+.mbox { background:#fff; border-radius:22px 22px 0 0; padding:22px 18px 30px; width:100%; max-width:500px; animation:su .28s ease; max-height:90vh; overflow-y:auto; }
+@keyframes su { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.mbox h3 { font-size:18px; font-weight:800; margin-bottom:16px; color:var(--dark); }
+.mg { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.mg .full { grid-column:1/-1; }
+.mf { display:flex; flex-direction:column; gap:4px; }
+.mf label { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+.mf input,.mf select { border:1.5px solid var(--border); border-radius:10px; padding:11px 13px; font-size:15px; font-weight:600; font-family:inherit; color:var(--dark); background:var(--bg); outline:none; width:100%; -webkit-appearance:none; }
+.mf input:focus,.mf select:focus { border-color:var(--accent); }
+.msave { width:100%; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:15px; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; margin-bottom:8px; }
+.mcancel { width:100%; background:var(--bg); color:var(--muted); border:none; border-radius:12px; padding:13px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; }
+
+/* TOAST */
+#toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:10px 20px; border-radius:999px; font-size:13px; font-weight:600; z-index:99; opacity:0; pointer-events:none; white-space:nowrap; transition:opacity .3s; }
+#toast.on { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="workoutView" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+  <div id="topbar">
+    <div class="tb-row">
+      <div class="app-title">ANTRENMAN<b>.</b></div>
+      <div class="week-ctrl">
+        <button class="wbtn" id="wP">‹</button>
+        <span id="wL">Hafta 1</span>
+        <button class="wbtn" id="wN">›</button>
+      </div>
+    </div>
+    <div id="dayTabs"></div>
+  </div>
+  <div id="mainScroll"></div>
+</div>
+
+<div id="goalsView">
+  <div class="g-hdr">
+    <h2>Hedefler 🎯</h2>
+    <p>Yaz 2025 · 12 hedef</p>
+    <div class="g-pct" id="gP">0%</div>
+    <div class="g-sub" id="gS">0 / 12 tamamlandı</div>
+    <div class="g-bar"><div class="g-bar-f" id="gB" style="width:0%"></div></div>
+  </div>
+  <div id="goalsScroll"></div>
+</div>
+
+<div id="bnav">
+  <button class="nb on" id="nW" onclick="sv('w')"><span class="ni">🏋️</span><span class="nl">ANTRENMAN</span></button>
+  <button class="nb" id="nG" onclick="sv('g')"><span class="ni">🎯</span><span class="nl">HEDEFLER</span></button>
+</div>
+
+<div id="mOverlay">
+  <div class="mbox">
+    <h3>＋ Egzersiz Ekle</h3>
+    <div class="mg">
+      <div class="mf full"><label>Egzersiz Adı</label><input id="mNm" type="text" placeholder="örn. Bench Press"></div>
+      <div class="mf"><label>Tip</label>
+        <select id="mTp" onchange="mtc()">
+          <option value="sr">Set × Tekrar</option>
+          <option value="st">Set × Süre</option>
+          <option value="t">Sadece Süre</option>
+          <option value="d">Mesafe</option>
+        </select>
+      </div>
+      <div class="mf"><label>Kategori</label>
+        <select id="mCt">
+          <option value="g">Güç</option><option value="c">Kardio</option>
+          <option value="k">Core</option><option value="e">Esneklik</option>
+        </select>
+      </div>
+      <div class="mf" id="fSets"><label>Set</label><input id="mSt" type="number" value="3" min="1" max="20"></div>
+      <div class="mf" id="fReps"><label>Tekrar</label><input id="mRp" type="number" value="10" min="1" max="200"></div>
+      <div class="mf" id="fW"><label>Ağırlık (kg)</label><input id="mWg" type="number" value="5" min="0" max="300" step="2.5"></div>
+      <div class="mf full" id="fDur" style="display:none"><label>Süre (saniye)</label><input id="mDr" type="number" value="60" min="5"></div>
+      <div class="mf full" id="fDst" style="display:none"><label>Mesafe (m)</label><input id="mDs" type="number" value="400" min="10"></div>
+      <div class="mf full"><label>Not (opsiyonel)</label><input id="mNo" type="text" placeholder="Teknik ipucu..."></div>
+    </div>
+    <button class="msave" onclick="addEx()">Ekle ✓</button>
+    <button class="mcancel" onclick="cm()">İptal</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var DAYS=['PZT','SAL','ÇRŞ','PRŞ','CMA','CTS','PAZ'];
+var DN={PZT:'Pazartesi',SAL:'Salı',ÇRŞ:'Çarşamba',PRŞ:'Perşembe',CMA:'Cuma',CTS:'Cumartesi',PAZ:'Pazar'};
+var RD={ÇRŞ:1,CMA:1,PAZ:1};
+var FC={PZT:'Alt Vücut Güç',SAL:'Üst Vücut Güç',PRŞ:'Kardio + Core',CTS:'Full Body Test'};
+var RI={
+  ÇRŞ:{t:'Aktif Dinlenme',s:'Hafif hareket, kasları gevşet',i:['30 dk yürüyüş veya bisiklet','Köpük silindir ile sırt & bacak','Genel esneme 10 dk']},
+  CMA:{t:'Dinlenme & Esneme',s:'Esneklik çalışması',i:['Hamstring esnemesi 3×40 sn','Kalça açma hareketleri','Omuz & sırt esnemesi']},
+  PAZ:{t:'Tam Dinlenme',s:'Toparlan ve hazırlan',i:['7–9 saat uyku','Bol su iç (min. 2.5 lt)','Yarınki antrenman için hazırlan']}
+};
+var GOALS=[
+  {id:1,t:"1,5 km'yi 8 dakikanın altında koş"},
+  {id:2,t:"400m sprinti 1:30'dan hızlı koş"},
+  {id:3,t:"Bench press'te vücut ağırlığı kaldır"},
+  {id:4,t:"Deadlift'te 1.5× vücut ağırlığı"},
+  {id:5,t:"Squat'ta kendi kilo seviyesi"},
+  {id:6,t:"Set halinde 10 temiz barfiks"},
+  {id:7,t:"30 şınav durmadan"},
+  {id:8,t:"Plank — minimum 2 dakika"},
+  {id:9,t:"Barfiks demirinde 60 sn asılı kal"},
+  {id:10,t:"Dizleri kırmadan ayak parmaklarına uzan"},
+  {id:11,t:"Farmer walk — kendi kilonu 50m taşı"},
+  {id:12,t:"Ara vermeden 10 tam burpee"}
+];
+var DEX={
+  PZT:[
+    {id:'p1',n:'Squat',t:'sr',s:4,r:8,w:5,c:'g',no:'Diz ucu ayak parmak hizasında'},
+    {id:'p2',n:'Deadlift',t:'sr',s:3,r:6,w:5,c:'g',no:'Sırtı düz tut'},
+    {id:'p3',n:'Lunge (her bacak)',t:'sr',s:3,r:10,w:5,c:'g',no:'Önce formu öğren'},
+    {id:'p4',n:'Calf Raise',t:'sr',s:3,r:15,w:0,c:'g',no:''},
+    {id:'p5',n:'Plank',t:'st',s:3,sec:30,w:0,c:'k',no:'Her hafta 5 sn artır'}
+  ],
+  SAL:[
+    {id:'s1',n:'Bench Press',t:'sr',s:4,r:8,w:5,c:'g',no:'Omuzları geriye çek'},
+    {id:'s2',n:'Barfiks / Asistlı',t:'sr',s:4,r:5,w:0,c:'g',no:'Bantla başla'},
+    {id:'s3',n:'Dumbbell OHP',t:'sr',s:3,r:10,w:5,c:'g',no:'Oturarak yapabilirsin'},
+    {id:'s4',n:'Bant Çekiş',t:'sr',s:3,r:12,w:5,c:'g',no:''},
+    {id:'s5',n:'Şınav',t:'sr',s:3,r:8,w:0,c:'k',no:'Her hafta 1-2 tekrar ekle'}
+  ],
+  PRŞ:[
+    {id:'pr1',n:'1.5 km Tempo Koşu',t:'t',sec:600,w:0,c:'c',no:'Her hafta 10 sn kıs'},
+    {id:'pr2',n:'400m Sprint',t:'d',dist:400,s:3,w:0,c:'c',no:'Setler arası 3 dk dinlen'},
+    {id:'pr3',n:'Burpee',t:'sr',s:3,r:5,w:0,c:'c',no:'Her hafta 1 tekrar ekle'},
+    {id:'pr4',n:'Farmer Walk',t:'d',dist:50,s:3,w:5,c:'g',no:'Her elde 5 kg'},
+    {id:'pr5',n:'Barfiks Asılı Kalma',t:'st',s:3,sec:20,w:0,c:'k',no:'Hedef 60 sn'}
+  ],
+  CTS:[
+    {id:'c1',n:'Şınav Max Set',t:'sr',s:3,r:10,w:0,c:'k',no:'Her sette maksimum'},
+    {id:'c2',n:'Barfiks Max Set',t:'sr',s:3,r:4,w:0,c:'g',no:'Her sette maksimum'},
+    {id:'c3',n:'Squat (hafif)',t:'sr',s:2,r:10,w:5,c:'g',no:'Form tekrarı'},
+    {id:'c4',n:'Plank Süre Testi',t:'t',sec:60,w:0,c:'k',no:'Kaç saniye? Kaydet!'},
+    {id:'c5',n:'Hamstring Esnemesi',t:'st',s:3,sec:30,w:0,c:'e',no:'Dizleri kırmadan uzat'},
+    {id:'c6',n:'Farmer Walk Test',t:'d',dist:50,s:1,w:5,c:'g',no:'Ağırlığı artır'}
+  ]
+};
+
+var cDay='PZT', cWeek=1, openId=null, addDay=null;
+var gDone=[];
+
+function ls(k,d){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+function lss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function getEx(d){var sv=ls('x3_'+d,null);if(sv)return sv;var df=DEX[d];return df?JSON.parse(JSON.stringify(df)):[];}
+function setEx(d,e){lss('x3_'+d,e);}
+function ge(id){return document.getElementById(id);}
+
+function fmtS(s){var m=Math.floor(s/60),r=s%60;if(m>0)return r>0?m+':'+(r<10?'0':'')+r:m+' dk';return s+' sn';}
+
+function chips(ex){
+  var a=[];
+  if(ex.t==='sr'){a.push({x:ex.s+'×'+ex.r+' tekrar',h:1});if(ex.w>0)a.push({x:ex.w+' kg',h:0});}
+  else if(ex.t==='st'){a.push({x:ex.s+'×'+fmtS(ex.sec),h:1});if(ex.w>0)a.push({x:ex.w+' kg',h:0});}
+  else if(ex.t==='t'){a.push({x:fmtS(ex.sec),h:1});}
+  else if(ex.t==='d'){a.push({x:ex.dist+'m',h:1});if(ex.s>1)a.push({x:ex.s+' set',h:0});if(ex.w>0)a.push({x:ex.w+' kg',h:0});}
+  return a;
+}
+function cc(c){return{g:'cg',c:'cc',k:'ck',e:'ce'}[c]||'cg';}
+function cl(c){return{g:'Güç',c:'Kardio',k:'Core',e:'Esneklik'}[c]||c;}
+
+function renderTabs(){
+  var h='';
+  for(var i=0;i<DAYS.length;i++){
+    var d=DAYS[i],a=d===cDay,r=RD[d];
+    h+='<button class="dtab'+(a?' active':'')+(r?' rd':'')+'" onclick="selDay(\''+d+'\')">'+d+'</button>';
+  }
+  ge('dayTabs').innerHTML=h;
+}
+
+function renderDay(){
+  var el=ge('mainScroll');
+  if(RD[cDay]){
+    var info=RI[cDay];
+    var ih='';for(var i=0;i<info.i.length;i++)ih+='<div>✦ '+info.i[i]+'</div>';
+    el.innerHTML='<div class="rest-card"><div class="ri">🛌</div><h3>'+info.t+'</h3><p>'+info.s+'</p><div class="rest-items">'+ih+'</div></div>';
+    return;
+  }
+  var exs=getEx(cDay),ts=0;
+  for(var j=0;j<exs.length;j++)ts+=(exs[j].s||1);
+  var h='<div class="day-hdr"><div><h2>'+DN[cDay]+'</h2><p>'+(FC[cDay]||'')+' · Hafta '+cWeek+'</p></div><div class="day-stats"><div class="dstat"><strong>'+exs.length+'</strong><span>Egzersiz</span></div><div class="dstat"><strong>'+ts+'</strong><span>Set</span></div></div></div><div class="sec-lbl">Egzersizler</div>';
+  for(var k=0;k<exs.length;k++)h+=exCard(exs[k],k+1);
+  h+='<button class="add-btn" onclick="openAdd(\''+cDay+'\')">＋ Egzersiz Ekle</button>';
+  el.innerHTML=h;
+}
+
+function exCard(ex,num){
+  var cs=chips(ex),ch='';
+  for(var i=0;i<cs.length;i++)ch+='<span class="chip'+(cs[i].h?' hi':'')+'">'+cs[i].x+'</span>';
+  ch+='<span class="cat '+cc(ex.c)+'">'+cl(ex.c)+'</span>';
+  var op=openId===ex.id;
+  var h='<div class="ex-card"><div class="ex-hdr" onclick="tc(\''+ex.id+'\')"><div class="ex-num">'+num+'</div><div class="ex-info"><div class="ex-name">'+ex.n+'</div><div class="ex-chips">'+ch+'</div></div><span class="arr'+(op?' open':'')+'">›</span></div>';
+  if(op)h+=epHtml(ex);
+  return h+'</div>';
+}
+
+function epHtml(ex){
+  var sr=ex.t==='sr',st=ex.t==='st',t=ex.t==='t',d=ex.t==='d';
+  var h='<div class="ep"><div class="eg">';
+  h+='<div class="ef full"><label>Ad</label><input type="text" id="en_'+ex.id+'" value="'+ex.n+'"></div>';
+  if(sr||st||d)h+='<div class="ef"><label>Set</label><input type="number" id="es_'+ex.id+'" value="'+(ex.s||1)+'" min="1" max="20"></div>';
+  if(sr)h+='<div class="ef"><label>Tekrar</label><input type="number" id="er_'+ex.id+'" value="'+ex.r+'" min="1" max="200"></div>';
+  if(st)h+='<div class="ef"><label>Süre/Set (sn)</label><input type="number" id="et_'+ex.id+'" value="'+ex.sec+'" min="5"></div>';
+  if(t)h+='<div class="ef full"><label>Süre (sn)</label><input type="number" id="et_'+ex.id+'" value="'+ex.sec+'" min="5"></div>';
+  if(d)h+='<div class="ef"><label>Mesafe (m)</label><input type="number" id="edi_'+ex.id+'" value="'+ex.dist+'" min="1"></div>';
+  if(!t)h+='<div class="ef"><label>Ağırlık (kg)</label><input type="number" id="ew_'+ex.id+'" value="'+ex.w+'" min="0" max="300" step="2.5"></div>';
+  h+='<div class="ef full"><label>Not</label><input type="text" id="eno_'+ex.id+'" value="'+(ex.no||'')+'"></div>';
+  h+='</div><div class="ebtns"><button class="bsave" onclick="save(\''+ex.id+'\')">✓ Kaydet</button><button class="bdel" onclick="del(\''+ex.id+'\')">🗑</button></div></div>';
+  return h;
+}
+
+function tc(id){openId=(openId===id)?null:id;renderDay();}
+
+function gv(id){var el=ge(id);return el?el.value:null;}
+function gn(id,def){var v=gv(id);return v!==null?(parseFloat(v)||def):def;}
+
+function save(id){
+  var exs=getEx(cDay),ex=null;
+  for(var i=0;i<exs.length;i++){if(exs[i].id===id){ex=exs[i];break;}}
+  if(!ex)return;
+  var nm=gv('en_'+id);if(nm&&nm.trim())ex.n=nm.trim();
+  if(ex.t==='sr'){ex.s=Math.max(1,gn('es_'+id,ex.s));ex.r=Math.max(1,gn('er_'+id,ex.r));ex.w=Math.max(0,gn('ew_'+id,ex.w));}
+  else if(ex.t==='st'){ex.s=Math.max(1,gn('es_'+id,ex.s));ex.sec=Math.max(5,gn('et_'+id,ex.sec));ex.w=Math.max(0,gn('ew_'+id,ex.w));}
+  else if(ex.t==='t'){ex.sec=Math.max(5,gn('et_'+id,ex.sec));}
+  else if(ex.t==='d'){ex.dist=Math.max(1,gn('edi_'+id,ex.dist));ex.s=Math.max(1,gn('es_'+id,ex.s));ex.w=Math.max(0,gn('ew_'+id,ex.w));}
+  var no=ge('eno_'+id);if(no)ex.no=no.value;
+  setEx(cDay,exs);openId=null;renderDay();toast('Kaydedildi ✓');
+}
+
+function del(id){var e=getEx(cDay).filter(function(x){return x.id!==id;});setEx(cDay,e);openId=null;renderDay();toast('Silindi');}
+function selDay(d){cDay=d;openId=null;renderTabs();renderDay();}
+
+ge('wP').onclick=function(){if(cWeek>1){cWeek--;ge('wL').textContent='Hafta '+cWeek;renderDay();}};
+ge('wN').onclick=function(){if(cWeek<16){cWeek++;ge('wL').textContent='Hafta '+cWeek;renderDay();}};
+
+function openAdd(d){addDay=d;ge('mNm').value='';ge('mNo').value='';ge('mTp').value='sr';ge('mSt').value='3';ge('mRp').value='10';ge('mWg').value='5';mtc();ge('mOverlay').classList.add('on');}
+function cm(){ge('mOverlay').classList.remove('on');}
+ge('mOverlay').addEventListener('click',function(e){if(e.target===this)cm();});
+
+function mtc(){
+  var t=ge('mTp').value;
+  ge('fSets').style.display=(t==='t')?'none':'';
+  ge('fReps').style.display=(t==='sr')?'':'none';
+  ge('fW').style.display=(t==='t')?'none':'';
+  ge('fDur').style.display=(t==='st'||t==='t')?'':'none';
+  ge('fDst').style.display=(t==='d')?'':'none';
+}
+
+function addEx(){
+  var nm=ge('mNm').value.trim();
+  if(!nm){toast('Egzersiz adı gir!');return;}
+  var t=ge('mTp').value,ct=ge('mCt').value,no=ge('mNo').value;
+  var id='x'+Date.now(),ex={id:id,n:nm,t:t,c:ct,no:no,w:0};
+  if(t==='sr'){ex.s=parseInt(ge('mSt').value)||3;ex.r=parseInt(ge('mRp').value)||10;ex.w=parseFloat(ge('mWg').value)||0;}
+  else if(t==='st'){ex.s=parseInt(ge('mSt').value)||3;ex.sec=parseInt(ge('mDr').value)||30;ex.w=parseFloat(ge('mWg').value)||0;}
+  else if(t==='t'){ex.sec=parseInt(ge('mDr').value)||60;}
+  else if(t==='d'){ex.dist=parseInt(ge('mDs').value)||400;ex.s=parseInt(ge('mSt').value)||3;ex.w=parseFloat(ge('mWg').value)||0;}
+  var exs=getEx(addDay);exs.push(ex);setEx(addDay,exs);cm();renderDay();toast('Eklendi ✓');
+}
+
+gDone=ls('gd3',[]);
+
+function renderGoals(){
+  var n=gDone.length,pct=Math.round(n/GOALS.length*100);
+  ge('gP').textContent=pct+'%';ge('gS').textContent=n+' / '+GOALS.length+' tamamlandı';ge('gB').style.width=pct+'%';
+  var h='';
+  for(var i=0;i<GOALS.length;i++){
+    var gl=GOALS[i],dn=gDone.indexOf(gl.id)!==-1;
+    h+='<div class="g-item'+(dn?' done':'')+'" onclick="tg('+gl.id+')"><div class="g-badge">'+(gl.id<10?'0'+gl.id:gl.id)+'</div><div class="g-txt">'+gl.t+'</div><div class="g-chk">'+(dn?'✓':'')+'</div></div>';
+  }
+  ge('goalsScroll').innerHTML=h;
+}
+
+function tg(id){
+  var i=gDone.indexOf(id);
+  if(i!==-1)gDone.splice(i,1);
+  else{gDone.push(id);toast('🎉 Hedef tamamlandı!');}
+  lss('gd3',gDone);renderGoals();
+}
+
+function sv(v){
+  var wv=ge('workoutView'),gv=ge('goalsView'),nw=ge('nW'),ng=ge('nG');
+  if(v==='w'){wv.style.display='flex';gv.classList.remove('on');nw.classList.add('on');ng.classList.remove('on');}
+  else{wv.style.display='none';gv.classList.add('on');nw.classList.remove('on');ng.classList.add('on');renderGoals();}
+}
+
+var tt=null;
+function toast(m){var el=ge('toast');el.textContent=m;el.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){el.classList.remove('on');},2200);}
+
+renderTabs();
+renderDay();
+
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(function(){});
+</script>
+</body>
+</html>
